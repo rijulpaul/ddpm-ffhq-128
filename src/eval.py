@@ -10,6 +10,10 @@ def evaluate(config, epoch, pipeline, model, ema):
         pipeline.scheduler.config
     )
 
+    pipeline.set_progress_bar_config(disable=True)
+
+    print(f"[Eval] Epoch {epoch} | Sampling {config.eval_batch_size} images...")
+
     images = pipeline(
         batch_size=config.eval_batch_size,
         num_inference_steps=50,

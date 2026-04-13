@@ -30,7 +30,7 @@ def train(config, checkpoint_path):
         num_training_steps=len(dataloader) * config.num_epochs,
     )
 
-    scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.amp.GradScaler("cuda")
 
     if checkpoint_path:
         checkpoint = torch.load(checkpoint_path, map_location=config.device)
@@ -44,6 +44,8 @@ def train(config, checkpoint_path):
         scaler.load_state_dict(checkpoint["scaler"])
 
         start_epoch = checkpoint["epoch"] + 1
+
+        print(f'Continuing training from checkpoint: Epoch {start_epoch}')
 
     for epoch in range(start_epoch,config.num_epochs):
         progress_bar = tqdm(
@@ -68,7 +70,7 @@ def train(config, checkpoint_path):
 
             noisy_images = noise_scheduler.add_noise(clean_images, noise, timesteps)
 
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 noise_pred = model(noisy_images, timesteps, return_dict=False)[0]
                 loss = F.mse_loss(noise_pred, noise)
 
@@ -84,7 +86,7 @@ def train(config, checkpoint_path):
             ema.update(model)
 
             # progress_bar.set_postfix({"loss": loss.item()})
-            # progress_bar.update(1)
+            progress_bar.update(1)
 
         pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 

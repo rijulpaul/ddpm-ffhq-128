@@ -14,7 +14,7 @@ class TrainingConfig:
     mixed_precision = "fp16"
     seed = 0
 
-    data_dir = "data/images128"
-    output_dir = "outputs"
+    data_dir = "dataset"
+    output_dir = "output"
 
     device = "cuda"

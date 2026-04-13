@@ -19,10 +19,10 @@ if __name__ == "__main__":
     config = TrainingConfig()
 
     # Override only if provided
-    if args.data_path:
+    if args.dataset:
         config.data_dir = args.dataset
 
-    if args.output_dir:
+    if args.output:
         config.output_dir = args.output
 
     train(config, checkpoint = args.checkpoint)

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class TrainingConfig:
     image_size = 128
@@ -16,5 +17,8 @@ class TrainingConfig:
 
     data_dir = "dataset"
     output_dir = "output"
+
+    upload_to_hf = False
+    repo_id = None
 
     device = "cuda"

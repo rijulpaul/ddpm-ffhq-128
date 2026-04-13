@@ -11,6 +11,7 @@ from .model import get_model
 from .ema import EMA
 from .eval import evaluate
 from .noise_scheduler import get_noise_scheduler
+from .utils import upload_to_hf
 
 
 def train(config, checkpoint_path):
@@ -45,9 +46,9 @@ def train(config, checkpoint_path):
 
         start_epoch = checkpoint["epoch"] + 1
 
-        print(f'Continuing training from checkpoint: Epoch {start_epoch}')
+        print(f"Continuing training from checkpoint: Epoch {start_epoch}")
 
-    for epoch in range(start_epoch,config.num_epochs):
+    for epoch in range(start_epoch, config.num_epochs):
         progress_bar = tqdm(
             dataloader,
             desc=f"Epoch {epoch}",
@@ -85,13 +86,15 @@ def train(config, checkpoint_path):
             lr_scheduler.step()
             ema.update(model)
 
-            # progress_bar.set_postfix({"loss": loss.item()})
             progress_bar.update(1)
 
         pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
         if epoch % config.save_image_epochs == 0:
             evaluate(config, epoch, pipeline, model, ema)
+
+            if (config.upload_to_hf):
+                upload_to_hf(config.repo_id,config.output_dir, commit_msg=f"Evaluation Images: Epoch :{epoch}")
 
         if epoch % config.save_model_epochs == 0:
             os.makedirs(config.output_dir, exist_ok=True)
@@ -109,3 +112,6 @@ def train(config, checkpoint_path):
             )
 
             pipeline.save_pretrained(f"{config.output_dir}/pipeline")
+
+            if (config.upload_to_hf):
+                upload_to_hf(config.repo_id,config.output_dir,commit_msg=f"Training Checkpoint: Epoch {epoch}")

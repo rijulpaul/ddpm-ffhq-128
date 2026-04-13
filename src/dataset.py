@@ -8,9 +8,9 @@ from datasets import load_dataset
 
 def ensure_dataset(config):
     # If dataset already exists → use it
-    if os.path.exists(config.data_path) and len(os.listdir(config.data_path)) > 0:
-        print(f"Using existing dataset at: {config.data_path}")
-        return config.data_path
+    if os.path.exists(config.data_dir) and len(os.listdir(config.data_dir)) > 0:
+        print(f"Using existing dataset at: {config.data_dir}")
+        return config.data_dir
 
     print("Dataset not found. Downloading from Kaggle...")
 
@@ -20,20 +20,20 @@ def ensure_dataset(config):
     print(f"Downloaded to: {download_path}")
 
     # Move/copy to desired path
-    os.makedirs(config.data_path, exist_ok=True)
+    os.makedirs(config.data_dir, exist_ok=True)
 
     for item in os.listdir(download_path):
         src = os.path.join(download_path, item)
-        dst = os.path.join(config.data_path, item)
+        dst = os.path.join(config.data_dir, item)
 
         if os.path.isdir(src):
             shutil.copytree(src, dst, dirs_exist_ok=True)
         else:
             shutil.copy2(src, dst)
 
-    print(f"Dataset prepared at: {config.data_path}")
+    print(f"Dataset prepared at: {config.data_dir}")
 
-    return config.data_path
+    return config.data_dir
 
 
 def get_dataloader(config):

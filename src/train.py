@@ -20,22 +20,17 @@ def train(config, checkpoint_path):
     dataloader = get_dataloader(config)
     model = get_model(config)
     ema = EMA(model)
-
     noise_scheduler = get_noise_scheduler()
-
     optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.learning_rate)
-
     lr_scheduler = get_cosine_schedule_with_warmup(
         optimizer,
         num_warmup_steps=config.lr_warmup_steps,
         num_training_steps=len(dataloader) * config.num_epochs,
     )
-
     scaler = torch.amp.GradScaler("cuda")
 
     if checkpoint_path:
         checkpoint = torch.load(checkpoint_path, map_location=config.device, weights_only=False)
-
         state_dict = checkpoint["model"]
 
         # Fix compiled model keys
@@ -45,10 +40,7 @@ def train(config, checkpoint_path):
         model = get_model(config,state_dict)
         optimizer.load_state_dict(checkpoint["optimizer"])
         lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
-
         ema.shadow = checkpoint["ema"]
-
-        # scaler.load_state_dict(checkpoint["scaler"])
 
         start_epoch = checkpoint["epoch"] + 1
 
@@ -77,14 +69,11 @@ def train(config, checkpoint_path):
 
             noisy_images = noise_scheduler.add_noise(clean_images, noise, timesteps)
 
-            with torch.amp.autocast("cuda"):
-                noise_pred = model(noisy_images, timesteps, return_dict=False)[0]
-                loss = F.mse_loss(noise_pred, noise)
+            optimizer.zero_grad()
 
-            if not torch.isfinite(loss):
-                print("Skipping step due to invalid loss")
-                optimizer.zero_grad(set_to_none=True)
-                continue
+            with torch.amp.autocast("cuda"):
+                noise_pred = model(noisy_images, timesteps).sample
+                loss = F.mse_loss(noise_pred, noise)
 
             scaler.scale(loss).backward()
 
@@ -93,7 +82,6 @@ def train(config, checkpoint_path):
 
             scaler.step(optimizer)
             scaler.update()
-            optimizer.zero_grad(set_to_none=True)
             lr_scheduler.step()
             ema.update(model)
 
@@ -116,7 +104,6 @@ def train(config, checkpoint_path):
                     "optimizer": optimizer.state_dict(),
                     "lr_scheduler": lr_scheduler.state_dict(),
                     "ema": ema.shadow,
-                    # "scaler": scaler.state_dict(),
                     "epoch": epoch,
                 },
                 f"{config.output_dir}/checkpoint.pt",

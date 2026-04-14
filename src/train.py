@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from tqdm.auto import tqdm
 from diffusers import DDPMPipeline
 from diffusers.optimization import get_cosine_schedule_with_warmup
-import bitsandbytes as bnb
 
 from .dataset import get_dataloader
 from .model import get_model

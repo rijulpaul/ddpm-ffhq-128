@@ -81,6 +81,11 @@ def train(config, checkpoint_path):
                 noise_pred = model(noisy_images, timesteps, return_dict=False)[0]
                 loss = F.mse_loss(noise_pred, noise)
 
+            if not torch.isfinite(loss):
+                print("Skipping step due to invalid loss")
+                optimizer.zero_grad(set_to_none=True)
+                continue
+
             scaler.scale(loss).backward()
 
             scaler.unscale_(optimizer)
@@ -88,7 +93,7 @@ def train(config, checkpoint_path):
 
             scaler.step(optimizer)
             scaler.update()
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
             lr_scheduler.step()
             ema.update(model)
 

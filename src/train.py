@@ -41,6 +41,12 @@ def train(config, checkpoint_path):
             state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
 
         model = get_model(config,state_dict)
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=config.learning_rate,
+            betas=(0.9, 0.999),
+            weight_decay=1e-4
+        )
         optimizer.load_state_dict(checkpoint["optimizer"])
         lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
         ema.shadow = checkpoint["ema"]
